@@ -7,7 +7,7 @@
 
 <main>
 	<div>
-		<textarea bind:value={text} placeholder="Users to ban: 1 per row"></textarea>
+		<textarea bind:value={text} placeholder="Users to {listName}: 1 per row"></textarea>
 		<p>You have currently {userCount} user{#if userCount !== 1}s{/if}
 			{listName}
 		</p>

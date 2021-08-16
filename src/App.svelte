@@ -5,6 +5,7 @@
 	import Banner from './Banner.svelte';
 	import { CLIENT_ID } from './env';
 	import type { HelixUserBlock } from 'twitch/lib/API/Helix/User/HelixUserBlock';
+	import UserChecker from './UserChecker.svelte';
 
 	const clientId = CLIENT_ID;
 	const redirectUri = window.location.protocol + '//' + window.location.host
@@ -54,6 +55,15 @@
 				<Banner apiClient={apiClient} accessToken={accessToken}/>
 				<h2>Fetch blocked users</h2>
 				<Banned apiClient={apiClient} bind:blocked={blockedUsers}/>
+				<h2>Banlist maintainer</h2>
+				<p>
+					Sometimes, Twitch decides to do it's job and delete the bot and spam accounts,
+					so they don't need to be banned from your chat. Accounts that are banned
+					for ToS violations cannot have their names recycled, so this simply checks
+					to see if there is an account with that name. Please use this to update
+					any ban lists you share so that people don't waste time banning dead accounts.
+				</p>
+				<UserChecker apiClient={apiClient} />
 			{/await}
 		</div>
 	{/if}
