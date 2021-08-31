@@ -35,7 +35,7 @@
 		client.connect().then(async () => {
 			for (const [index, user] of users.entries()) {
 				status = `banning user ${index} of ${users.length}. Expected time remaining: ${(users.length - index)*rateLimit/1000}s`;
-				client.say(channel, `/ban ${user} ${reason}`);
+				client.say(channel, `/ban ${user.replace("/ban ", "").trim().split(" ")[0]} ${reason}`);
 				await new Promise(res => { setTimeout(res, rateLimit); });
 			}
 			status = "completed!";
