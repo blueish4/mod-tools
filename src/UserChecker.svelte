@@ -6,21 +6,26 @@
 
 	let inputToChecker = "";
 	let namesToCheck = [];
+	let status = "ready";
 	let foundUsers = [] as HelixUser[];
 	$: {
 		namesToCheck = inputToChecker.trim()
 			.split('\n')
 			.map((l) => {
-				return l.replace("/ban ", "").trim();
+				return l.replace("/ban ", "").trim().split(" ")[0];
+			}).filter((l) => {
+				return /^[a-zA-Z0-9_]{4,25}$/.test(l);
 			});
 		}
 	async function checkUsers() {
 		for(let i = 0; i<namesToCheck.length; i+=100) {
+			status = `testing ${i} of ${namesToCheck.length}`;
 			foundUsers = [
 				...foundUsers,
 				...(await apiClient.helix.users.getUsersByNames(namesToCheck.slice(i, i+100)))
 			];
 		}
+		status = "completed!";
 	}
 
 	async function saveNewUserlist() {
@@ -31,6 +36,7 @@
 
 <main>
 	<Userlist listName="check" bind:text={inputToChecker} />
+	<p>Status: {status}</p>
 	<button on:click={checkUsers}>Check!</button>
 	<button on:click={saveNewUserlist}>Copy to Clipboard</button>
 	<ul>

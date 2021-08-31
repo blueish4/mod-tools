@@ -6,6 +6,8 @@
 	export let apiClient: ApiClient;
 	export let accessToken: string;
 
+	const rateLimit = 30000/100;
+
 	let reason = "";
 	let usersToBan: string[];
 	let rawToBan: string;
@@ -31,10 +33,10 @@
 			channels: [channel],
 		});
 		client.connect().then(async () => {
-			status = "banning"
-			for (const user of users) {
+			for (const [index, user] of users.entries()) {
+				status = `banning user ${index} of ${users.length}. Expected time remaining: ${(users.length - index)*rateLimit/1000}s`;
 				client.say(channel, `/ban ${user} ${reason}`);
-				await new Promise(res => { setTimeout(res, 30000/100); });
+				await new Promise(res => { setTimeout(res, rateLimit); });
 			}
 			status = "completed!";
 		}).catch(() => {
@@ -50,7 +52,7 @@
 </script>
 
 <main>
-	<Userlist listName="to ban" bind:text={rawToBan} />
+	<Userlist listName="ban" bind:text={rawToBan} />
 	<input type="text" bind:value={reason} placeholder="reason" />
 	<button on:click={banUserWrapper}>GO!</button>
 	<p>Status: {status}</p>
