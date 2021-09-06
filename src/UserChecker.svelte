@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ApiClient, HelixUser } from 'twitch/lib';
 	import Userlist from './Userlist.svelte';
+	import { lineToUsername } from './utils';
 
 	export let apiClient: ApiClient;
 
@@ -11,11 +12,14 @@
 	$: {
 		namesToCheck = inputToChecker.trim()
 			.split('\n')
-			.map((l) => {
-				return l.replace("/ban ", "").trim().split(" ")[0];
-			}).filter((l) => {
-				return /^[a-zA-Z0-9_]{4,25}$/.test(l);
-			});
+			.flatMap((l) => {
+				try {
+					return lineToUsername(l);
+				} catch (e) {
+					console.error(e);
+					return [];
+				}
+			})
 		}
 	async function checkUsers() {
 		for(let i = 0; i<namesToCheck.length; i+=100) {
