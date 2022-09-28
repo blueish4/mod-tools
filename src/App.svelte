@@ -1,25 +1,24 @@
 <script lang="ts">
-	import { StaticAuthProvider } from 'twitch-auth';
-	import { ApiClient } from 'twitch';
+	import { StaticAuthProvider } from '@twurple/auth';
+	import { ApiClient, HelixUserBlock } from '@twurple/api';
 	import Banned from './Banned.svelte';
 	import Banner from './Banner.svelte';
 	import { CLIENT_ID } from './env';
-	import type { HelixUserBlock } from 'twitch/lib/API/Helix/User/HelixUserBlock';
 	import UserChecker from './UserChecker.svelte';
 
 	const clientId = CLIENT_ID;
 	const redirectUri = window.location.protocol + '//' + window.location.host
-	const scopes = ["chat:edit", "chat:read", "channel:moderate","user:manage:blocked_users","user:read:blocked_users", "user:read:email", "channel:read:redemptions"]
+	const scopes = ["channel:moderate","moderator:manage:banned_users", "user:manage:blocked_users","user:read:blocked_users", "user:read:email", "channel:read:redemptions"]
 	let apiClient: ApiClient;
 	let accessToken: string;
 
 	let blockedUsers: HelixUserBlock[];
 
-	apiClient = getApiClient()
+	apiClient = getApiClient();
 	function getApiClient() {
 		if (window.location.hash.indexOf("access_token") > 0) {
 			accessToken = window.location.hash.match(/access_token=(?<token>[0-9a-z]+)&/).groups["token"];
-			const authProvider = new StaticAuthProvider(clientId, accessToken);
+			const authProvider = new StaticAuthProvider(clientId, accessToken, scopes);
 			window.history.replaceState(null, null, '/');
 			return apiClient = new ApiClient({ authProvider });
 		}
@@ -52,7 +51,7 @@
 		<div id="pageContent">
 			{#await apiClient then apiClient}
 				<h2>Bulk ban users</h2>
-				<Banner apiClient={apiClient} accessToken={accessToken}/>
+				<Banner apiClient={apiClient}/>
 				<h2>Fetch blocked users</h2>
 				<Banned apiClient={apiClient} bind:blocked={blockedUsers}/>
 				<h2>Banlist maintainer</h2>

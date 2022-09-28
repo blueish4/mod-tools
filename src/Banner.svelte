@@ -1,11 +1,10 @@
 <script lang="ts">
-	import type { ApiClient } from "twitch/lib";
-	import tmi from "tmi.js";
+	import type { ApiClient } from '@twurple/api';
+	import { HttpStatusCodeError } from '@twurple/api-call'
 	import Userlist from "./Userlist.svelte";
 	import { lineToUsername } from './utils';
 
 	export let apiClient: ApiClient;
-	export let accessToken: string;
 
 	const rateLimit = 30000/100;
 
@@ -16,49 +15,37 @@
 	let status = "ready";
 	$: if (!!rawToBan) usersToBan = rawToBan.trim().split("\n");
 
-	function banUsers(users: string[], reason: string, channel: string) {
-		//connect to IRC API
-		status = "connecting";
-		const client = new tmi.Client({
-			options: {
-				skipUpdatingEmotesets: true,
-				updateEmotesetsTimer: 0,
-			},
-			identity: {
-				username: channel,
-				password: `oauth:${accessToken}`,
-			},
-			connection: {
-				reconnect: true,
-				secure: true,
-			},
-			channels: [channel],
-		});
-		client.connect().then(async () => {
-			for (let userPage = 0; userPage < users.length; userPage += 100) {
-				const candidates = users.slice(userPage, userPage + 100).map(u => lineToUsername(u));
-				let knownUsers = [];
-				if (goFast) {
-					knownUsers = (await apiClient.helix.users.getUsersByNames(candidates))
-						.map(user => user.name);
-				} else {
-					knownUsers = candidates;
-				}
-				for (const [index, user] of knownUsers.entries()) {
-					const userIndex = userPage + index;
-					status = `banning user ${userIndex} of ${users.length}. Expected time remaining: ${(users.length - (userIndex))*rateLimit/1000}s`;
-					client.say(channel, `/ban ${user} ${reason}`);
-					await new Promise(res => { setTimeout(res, rateLimit); });
+	async function banUsers(users: string[], reason: string, channel: string) {
+		const broadcaster = await apiClient.users.getUserByName(channel);
+		const moderator = (await apiClient.getTokenInfo()).userId as string;
+		for (let userPage = 0; userPage < users.length; userPage += 100) {
+			const candidates = users.slice(userPage, userPage + 100).map(u => lineToUsername(u));
+			let knownUsers = [] as Array<string>;
+			if (goFast) {
+				knownUsers = (await apiClient.users.getUsersByNames(candidates))
+					.map(user => user.id);
+			} else {
+				knownUsers = candidates;
+			}
+			for (const [index, user_id] of knownUsers.entries()) {
+				const userIndex = userPage + index;
+				status = `banning user ${userIndex} of ${users.length}. Expected time remaining: ${(users.length - (userIndex))*apiClient.lastKnownLimit}s`;
+				try {
+					apiClient.moderation.banUser(broadcaster, moderator, {userId: user_id, reason});
+				} catch (err) {
+					if (err instanceof HttpStatusCodeError) {
+						console.error(err.message);
+					} else {
+						throw err;
+					}
 				}
 			}
-			status = "completed!";
-		}).catch((e: Error) => {
-			status = `error: ${e.message}`;
-		});
+		}
+		status = "completed!";
 	}
 
 	function banUserWrapper() {
-		apiClient.helix.users.getMe().then((ownUser) => {
+		apiClient.users.getMe().then((ownUser) => {
 			banUsers(usersToBan, reason, ownUser.name);
 		});
 	}

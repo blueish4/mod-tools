@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ApiClient, HelixUser } from 'twitch/lib';
+	import type { ApiClient, HelixUser } from '@twurple/api';
 	import Userlist from './Userlist.svelte';
 	import { lineToUsername } from './utils';
 
@@ -26,8 +26,9 @@
 			status = `testing ${i} of ${namesToCheck.length}`;
 			foundUsers = [
 				...foundUsers,
-				...(await apiClient.helix.users.getUsersByNames(namesToCheck.slice(i, i+100)))
+				...(await apiClient.users.getUsersByNames(namesToCheck.slice(i, i+100)))
 			];
+			console.log(foundUsers.map(u=>u.name));
 		}
 		status = "completed!";
 	}
